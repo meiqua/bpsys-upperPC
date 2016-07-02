@@ -101,7 +101,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(dealWithDataThread,SIGNAL(TestDataBack(int)),this,SLOT(TestDataReceiver(int)));
     connect(dealWithDataThread,SIGNAL(AfterDealWithError(QByteArray)),this,SLOT(AfterDealReceiver(QByteArray)));
-    connect(dealWithDataThread,SIGNAL(sendRequest(QString,QString)),this,SLOT(receiveReqeust(QString,QString)));
+    connect(dealWithDataThread,SIGNAL(sendRequest(QString,QString,QString)),this,SLOT(receiveReqeust(QString,QString,QString)));
             //send received data to thread to deal with it
 
 //    connect(reply, SIGNAL(finished()),
@@ -227,9 +227,9 @@ void MainWindow::AfterDealReceiver(QByteArray next)
         console->putData("\n");
 }
 
-void MainWindow::receiveReqeust(QString mode, QString content)
+void MainWindow::receiveReqeust(QString mode, QString id,QString shelf)
 {
-    QString url="http://139.196.25.125:8080/library/struts2/dispatch?key="+mode+"&content="+content;
+    QString url="http://139.196.25.125:8080/library/struts2/dispatch?key="+mode+"&id="+shelf+id;
 
 //        redirectRequest(req);
           //for safety ,qt can't auto redirect.

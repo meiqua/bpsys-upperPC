@@ -84,7 +84,7 @@ private slots:
     void TestDataReceiver(int test);
     void AfterDealReceiver(QByteArray);
 
-    void receiveReqeust(QString,QString);
+    void receiveReqeust(QString,QString,QString);
     void redirectRequest();
 
     QString reverse(QString );

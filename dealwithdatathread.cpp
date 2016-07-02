@@ -46,7 +46,7 @@ void DealWithDataThread::SendToServer(QString mode, QString id)
 //        req.setUrl(QUrl(url));
 //        network_manager.get(req);     //it's auto 异步
 
-       emit sendRequest(mode,id);
+       emit sendRequest(mode,id,shelf);
 }
 
 void DealWithDataThread::parseData(QByteArray data)
@@ -84,16 +84,11 @@ void DealWithDataThread::findState(QList<QByteArray> data)
     mutex->unlock();
 
     QString mode; //mode=fetch or return or initial
-    QString content;
-    bool sendReady=false;
 
     QListIterator<QByteArray> i(data);
-    int counter=-1;
     while (i.hasNext())
     {
-        counter++;
         QByteArray tempArray = i.next();
-//        mode = updateStateList(tempArray);
         QList<int> currentList;
         currentList = parseArray(tempArray);
         QList<QMap<QString,int> > tempStateList = generateMap(currentList);
@@ -104,7 +99,8 @@ void DealWithDataThread::findState(QList<QByteArray> data)
             stateList.append(tempStateList);
             mode="initial";
             for(int i=0;i<stateList.size();i++){
-
+                    QString idString = QString::number(stateList.at(i)["id"],10);
+                    SendToServer(mode,idString);
             }
         }else{
             int lastJ=0;
@@ -125,10 +121,12 @@ void DealWithDataThread::findState(QList<QByteArray> data)
                         if(tempMap["end"]==tempMap["start"]){//skew book match
                             updatedMap["length"]=tempMap["length"];
                             updatedMap["end"]=tempMap["end"];
+                            updatedMap["id"]=updatedStateList.size();
                             updatedStateList.append(updatedMap);
                         }else{//erect book match
                             updatedMap["length"]=recordMap["length"];
                             updatedMap["end"]=updatedMap["start"]+recordMap["length"]-1;
+                            updatedMap["id"]=updatedStateList.size();
                             updatedStateList.append(updatedMap);
                             while(updatedMap["end"]+1<tempMap["end"]){
                                 updatedMap["start"]=updatedMap["end"]+1;
@@ -140,12 +138,17 @@ void DealWithDataThread::findState(QList<QByteArray> data)
                                         fetchOne[nestedJ]=1;
                                         updatedMap["length"]=recordMap["length"];
                                         updatedMap["end"]=updatedMap["start"]+recordMap["length"]-1;
+                                        updatedMap["id"]=updatedStateList.size();
                                         updatedStateList.append(updatedMap);
                                     }else if((recordMap["start"]-updatedMap["start"])>tolerance){
                                         mode="return";
                                         updatedMap["end"]=recordMap["start"]-1;
                                         updatedMap["length"]=updatedMap["end"]-updatedMap["start"]+1;
-                                        updatedStateList.append(updatedMap);                           }
+                                        updatedMap["id"]=updatedStateList.size();
+                                        updatedStateList.append(updatedMap);
+                                        QString idString = QString::number(updatedMap["id"],10);
+                                        SendToServer(mode,idString);
+                                    }
                                 }
                             }
                         }
@@ -155,11 +158,17 @@ void DealWithDataThread::findState(QList<QByteArray> data)
                         if(tempMap["end"]==tempMap["start"]){
                             updatedMap["length"]=tempMap["length"];
                             updatedMap["end"]=tempMap["end"];
+                            updatedMap["id"]=updatedStateList.size();
                             updatedStateList.append(updatedMap);
+                            QString idString = QString::number(updatedMap["id"],10);
+                            SendToServer(mode,idString);
                         }else{
                             updatedMap["end"]=recordMap["start"]-1;
                             updatedMap["length"]=updatedMap["end"]-updatedMap["start"]+1;
+                            updatedMap["id"]=updatedStateList.size();
                             updatedStateList.append(updatedMap);
+                            QString idString = QString::number(updatedMap["id"],10);
+                            SendToServer(mode,idString);
                         }
                         break;
                     }
@@ -168,101 +177,14 @@ void DealWithDataThread::findState(QList<QByteArray> data)
             for(int i=0;i<stateList.size();i++){
                 if(fetchOne[i]==0){
                     mode="fetch";
+                    QString idString = QString::number(stateList.at(i)["id"],10);
+                    SendToServer(mode,idString);
                 }
             }
         }
-        if(sendReady)
-        {
-            SendToServer(mode,content);
-            sendReady=false;
-        }
+        stateList.clear();
+        stateList.append(updatedStateList);
     }
-
-
-      // contentEnd=contentStart+length;
-      // content=shelf+QString::number(contentStart, 10)+"to"+QString::number(contentEnd, 10);
-
-
-}
-
-QString DealWithDataThread::updateStateList(QByteArray currentState)
-{
-    QString mode;
-    QList<int> currentList;
-    currentList = parseArray(currentState);
-    QList<QMap<QString,int> > tempStateList = generateMap(currentList);
-    QList<QMap<QString,int> > updatedStateList;
-    int fetchOne[stateList.size()]={0};//if book is matched, set 0 to 1;
-
-    if(stateList.isEmpty()){
-        stateList.append(tempStateList);
-        mode="initial";
-    }else{
-        int lastJ=0;
-        int tolerance=1;
-        for(int i=0;i<tempStateList.size();i++){
-            QMap<QString,int> tempMap;
-            tempMap = tempStateList.at(i);
-            for(int j=lastJ;j<stateList.size();j++){
-                QMap<QString,int> updatedMap;
-                QMap<QString,int> recordMap;
-                recordMap = stateList.at(j);
-
-                updatedMap["start"]=tempMap["start"];
-                if(((updatedMap["start"]-recordMap["start"])<=tolerance)
-                        ||((updatedMap["start"]-recordMap["start"])>=-tolerance)){//continous condition
-                    lastJ=j;
-                    fetchOne[j]=1;
-                    if(tempMap["end"]==tempMap["start"]){//skew book match
-                        updatedMap["length"]=tempMap["length"];
-                        updatedMap["end"]=tempMap["end"];
-                        updatedStateList.append(updatedMap);
-                    }else{//erect book match
-                        updatedMap["length"]=recordMap["length"];
-                        updatedMap["end"]=updatedMap["start"]+recordMap["length"]-1;
-                        updatedStateList.append(updatedMap);
-                        while(updatedMap["end"]+1<tempMap["end"]){
-                            updatedMap["start"]=updatedMap["end"]+1;
-                            for(int nestedJ=lastJ;nestedJ<stateList.size();nestedJ++){
-                                recordMap = stateList.at(nestedJ);
-                                if(((updatedMap["start"]-recordMap["start"])<=tolerance)
-                                        ||((updatedMap["start"]-recordMap["start"])>=-tolerance)){//continous condition
-                                    lastJ=nestedJ;
-                                    fetchOne[nestedJ]=1;
-                                    updatedMap["length"]=recordMap["length"];
-                                    updatedMap["end"]=updatedMap["start"]+recordMap["length"]-1;
-                                    updatedStateList.append(updatedMap);
-                                }else if((recordMap["start"]-updatedMap["start"])>tolerance){
-                                    mode="return";
-                                    updatedMap["end"]=recordMap["start"]-1;
-                                    updatedMap["length"]=updatedMap["end"]-updatedMap["start"]+1;
-                                    updatedStateList.append(updatedMap);                           }
-                            }
-                        }
-                    }
-                    break;
-                }else if((recordMap["start"]-tempMap["start"])>tolerance){
-                    mode="return";
-                    if(tempMap["end"]==tempMap["start"]){
-                        updatedMap["length"]=tempMap["length"];
-                        updatedMap["end"]=tempMap["end"];
-                        updatedStateList.append(updatedMap);
-                    }else{
-                        updatedMap["end"]=recordMap["start"]-1;
-                        updatedMap["length"]=updatedMap["end"]-updatedMap["start"]+1;
-                        updatedStateList.append(updatedMap);
-                    }
-                    break;
-                }
-            }
-        }
-        for(int i=0;i<stateList.size();i++){
-            if(fetchOne[i]==0){
-                mode="fetch";
-            }
-        }
-    }
-    return mode;
 }
 
 QList<QMap<QString, int> > DealWithDataThread::generateMap(QList<int> currentList)

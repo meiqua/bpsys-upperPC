@@ -38,10 +38,9 @@ private:
      int what;
      QString shelf;
 
-    void SendToServer(QString mode, QString content);
+    void SendToServer(QString mode, QString id);
     void parseData(QByteArray data);
     void findState(QList<QByteArray> data);
-    QString updateStateList(QByteArray currentData);
     QList<QMap<QString,int> > generateMap(QList<int> currentList);
 
     QList<QByteArray> DealWithError(QList<QByteArray>);
@@ -54,7 +53,7 @@ private:
     QByteArray change01(QByteArray);
 
 signals:
-    void sendRequest(QString,QString);
+    void sendRequest(QString,QString,QString);
 
     void TestDataBack(int);
 
