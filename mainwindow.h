@@ -44,7 +44,7 @@
 #define MAINWINDOW_H
 
 #include <QtCore/QtGlobal>
-
+#include <QMutex>
 #include <QMainWindow>
 
 #include <QtSerialPort/QSerialPort>
@@ -101,8 +101,8 @@ private:
     QNetworkAccessManager network_manager;
     QNetworkReply *reply;
     QUrl url;
-
-
+    QMutex mutex;
+    DealWithDataThread *dealWithDataThread;
     Ui::MainWindow *ui;
     Console *console;
     SettingsDialog *settings;

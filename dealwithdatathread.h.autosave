@@ -38,7 +38,7 @@ private:
      int what;
      QString shelf;
 
-    void SendToServer(QString mode, QString content);
+    void SendToServer(QString mode, QString id);
     void parseData(QByteArray data);
     void findState(QList<QByteArray> data);
     QString updateStateList(QByteArray currentData);
