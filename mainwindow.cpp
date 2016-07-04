@@ -229,7 +229,7 @@ void MainWindow::AfterDealReceiver(QByteArray next)
 
 void MainWindow::receiveReqeust(QString mode, QString id,QString shelf)
 {
-    QString url="http://139.196.25.125:8080/library/struts2/dispatch?key="+mode+"&id="+shelf+id;
+    QString url="http://115.28.205.144:8080/library/struts2/dispatch?key="+mode+"&content="+shelf+id;
 
 //        redirectRequest(req);
           //for safety ,qt can't auto redirect.

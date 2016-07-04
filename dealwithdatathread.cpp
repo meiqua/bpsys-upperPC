@@ -41,12 +41,12 @@ void DealWithDataThread::run()
 
 void DealWithDataThread::SendToServer(QString mode, QString id)
 {
-//    QString url="http://139.196.25.125:8080/library/struts2/dispatch?key="+mode+"&content="+content;
-//    QNetworkRequest req;
-//        req.setUrl(QUrl(url));
-//        network_manager.get(req);     //it's auto 异步
-
-       emit sendRequest(mode,id,shelf);
+    cout<<"-------------------------------------"<<endl;
+    cout<<"mode:  "<<mode<<endl;
+    cout<<"id:  "<<id<<endl;
+    cout<<"shelf:  "<<shelf<<endl;
+    cout<<"-------------------------------------"<<endl;
+    emit sendRequest(mode,id,shelf);
 }
 
 void DealWithDataThread::parseData(QByteArray data)
