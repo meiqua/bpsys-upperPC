@@ -84,6 +84,10 @@ void DealWithDataThread::findState(QList<QByteArray> data)
     mutex->unlock();
 
     QString mode; //mode=fetch or return or initial
+    int countChange = 0;
+    QString idString='';
+    QList<QString> returnId;
+    QList<QString> fetchId;
 
     QListIterator<QByteArray> i(data);
     while (i.hasNext())
@@ -146,8 +150,9 @@ void DealWithDataThread::findState(QList<QByteArray> data)
                                         updatedMap["length"]=updatedMap["end"]-updatedMap["start"]+1;
                                         updatedMap["id"]=updatedStateList.size();
                                         updatedStateList.append(updatedMap);
-                                        QString idString = QString::number(updatedMap["id"],10);
-                                        SendToServer(mode,idString);
+                                        idString = QString::number(updatedMap["id"],10);
+                                        returnId.append(idString);
+                                        countChange++;
                                     }
                                 }
                             }
@@ -160,15 +165,17 @@ void DealWithDataThread::findState(QList<QByteArray> data)
                             updatedMap["end"]=tempMap["end"];
                             updatedMap["id"]=updatedStateList.size();
                             updatedStateList.append(updatedMap);
-                            QString idString = QString::number(updatedMap["id"],10);
-                            SendToServer(mode,idString);
+                            idString = QString::number(updatedMap["id"],10);
+                            returnId.append(idString);
+                            countChange++;
                         }else{
                             updatedMap["end"]=recordMap["start"]-1;
                             updatedMap["length"]=updatedMap["end"]-updatedMap["start"]+1;
                             updatedMap["id"]=updatedStateList.size();
                             updatedStateList.append(updatedMap);
-                            QString idString = QString::number(updatedMap["id"],10);
-                            SendToServer(mode,idString);
+                            idString = QString::number(updatedMap["id"],10);
+                            returnId.append(idString);
+                            countChange++;
                         }
                         break;
                     }
@@ -176,10 +183,22 @@ void DealWithDataThread::findState(QList<QByteArray> data)
             }
             for(int i=0;i<stateList.size();i++){
                 if(fetchOne[i]==0){
-                    mode="fetch";
-                    QString idString = QString::number(stateList.at(i)["id"],10);
-                    SendToServer(mode,idString);
+                    idString = QString::number(stateList.at(i)["id"],10);
+                    fetchId.append(idString);
+                    countChange--;
                 }
+            }
+        }
+
+        if(countChange>0){
+            mode="return";
+            for(int i=0;i<returnId.size();i++){
+                SendToServer("return",returnId.at(i));
+            }
+        }else if(countChange<0){
+            mode="fetch";
+            for(int i=0;i<fetchId.size();i++){
+                SendToServer("fetch",fetchId.at(i));
             }
         }
         stateList.clear();
